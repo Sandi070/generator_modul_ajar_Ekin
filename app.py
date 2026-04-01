@@ -71,7 +71,7 @@ if st.button("✨ Buat Modul Ajar AI", use_container_width=True, type="primary")
                 genai.configure(api_key=user_api_key)
                 
                 # PERBAIKAN: Menggunakan nama model yang valid
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                model = genai.GenerativeModel('gemini-flash-latest')
                 
                 # Menyusun Prompt
                 prompt_system = f"""
