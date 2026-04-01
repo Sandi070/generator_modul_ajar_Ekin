@@ -4,7 +4,7 @@ Aplikasi web interaktif berbasis Streamlit dan Gemini AI untuk menyusun Modul Aj
 
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/)
 [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![Gemini API](https://img.shields.io/badge/AI-Gemini_1.5_Flash-orange.svg)](https://aistudio.google.com/)
+[![Gemini API](https://img.shields.io/badge/AI-Gemini_1.5_Flash Latest-orange.svg)](https://aistudio.google.com/)
 
 Aplikasi web sumber terbuka (*open-source*) yang dirancang untuk membantu rekan-rekan pendidik dalam menyusun **Modul Ajar (RPP)** secara otomatis, terstruktur, dan komprehensif. Aplikasi ini ditenagai oleh **Google Gemini AI** dan dibangun menggunakan **Streamlit**.
 
