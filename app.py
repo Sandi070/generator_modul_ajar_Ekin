@@ -37,11 +37,13 @@ st.markdown("### Lengkapi Data Pembelajaran")
 col1, col2 = st.columns(2)
 
 with col1:
-    mapel = st.text_input("Mata Pelajaran", placeholder="Contoh: Kimia, Fiqh, SKI...")
-    fase = st.text_input("Fase / Kelas", placeholder="Contoh: F / XI")
+    # PERBAIKAN: Menggunakan 'value' sebagai nilai default agar tidak dianggap kosong
+    mapel = st.text_input("Mata Pelajaran", value="Kimia")
+    fase = st.text_input("Fase / Kelas", value="F / XI")
 
 with col2:
-    materi = st.text_input("Materi / Topik Pembelajaran", placeholder="Contoh: Pereaksi Pembatas")
+    # PERBAIKAN: Menggunakan 'value' sebagai nilai default
+    materi = st.text_input("Materi / Topik Pembelajaran", value="Pereaksi Pembatas")
     pendekatan = st.selectbox("Pendekatan Tambahan", [
         "Pendidikan Karakter",
         "Moderasi Beragama (Nilai-nilai Kemenag)",
@@ -55,10 +57,10 @@ st.markdown("---")
 # --- TOMBOL GENERATE ---
 if st.button("✨ Buat Modul Ajar AI", use_container_width=True, type="primary"):
     
-    # Validasi input
-    if not user_api_key:
+    # PERBAIKAN: Menggunakan .strip() agar spasi kosong tidak lolos validasi
+    if not user_api_key.strip():
         st.warning("⚠️ Silakan masukkan API Key di menu samping (sidebar) terlebih dahulu.")
-    elif not mapel or not fase or not materi:
+    elif not mapel.strip() or not fase.strip() or not materi.strip():
         st.warning("⚠️ Harap lengkapi Mata Pelajaran, Fase/Kelas, dan Materi!")
     else:
         # Jika semua data lengkap, mulai proses AI
@@ -68,8 +70,8 @@ if st.button("✨ Buat Modul Ajar AI", use_container_width=True, type="primary")
                 # Konfigurasi API dengan key pengguna
                 genai.configure(api_key=user_api_key)
                 
-                # Menggunakan model Gemini Flash Latest (Cepat dan cerdas)
-                model = genai.GenerativeModel('gemini-1.5-flash-latest')
+                # PERBAIKAN: Menggunakan nama model yang valid
+                model = genai.GenerativeModel('gemini-1.5-flash')
                 
                 # Menyusun Prompt
                 prompt_system = f"""
