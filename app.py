@@ -1,6 +1,7 @@
 import streamlit as st
 import google.generativeai as genai
 from datetime import datetime
+import markdown
 
 # Konfigurasi Halaman (Harus diletakkan paling atas)
 st.set_page_config(
@@ -33,7 +34,6 @@ with st.sidebar:
     st.header("⚙️ Pengaturan Sistem")
     st.markdown("Untuk menggunakan aplikasi ini, setiap guru harus memasukkan API Key masing-masing.")
     
-    # Input API Key disembunyikan (tipe password)
     user_api_key = st.text_input("Masukkan Gemini API Key Anda:", type="password")
     
     st.markdown("---")
@@ -49,7 +49,6 @@ col1, col2 = st.columns(2)
 with col1:
     mapel = st.text_input("Mata Pelajaran", value="Kimia")
     fase = st.text_input("Fase / Kelas", value="F / XI")
-    # Menu Tahun Pelajaran yang terisi otomatis berdasarkan tahun saat ini
     tahun = st.text_input("Tahun Pelajaran", value=get_tahun_pelajaran())
 
 with col2:
@@ -67,7 +66,6 @@ st.markdown("---")
 # --- TOMBOL GENERATE ---
 if st.button("✨ Buat Modul Ajar AI", use_container_width=True, type="primary"):
     
-    # Validasi input
     if not user_api_key.strip():
         st.warning("⚠️ Silakan masukkan API Key di menu samping (sidebar) terlebih dahulu.")
     elif not mapel.strip() or not fase.strip() or not materi.strip() or not tahun.strip():
@@ -76,13 +74,9 @@ if st.button("✨ Buat Modul Ajar AI", use_container_width=True, type="primary")
         try:
             with st.spinner("⏳ Sedang merakit modul pembelajaran dengan cinta..."):
                 
-                # Konfigurasi API
                 genai.configure(api_key=user_api_key)
-                
-                # Menggunakan model Gemini sesuai preferensi Anda
                 model = genai.GenerativeModel('gemini-flash-latest')
                 
-                # Menyusun Prompt (Menambahkan variabel {tahun} ke dalam instruksi)
                 prompt_system = f"""
                 Kamu adalah seorang ahli pendidikan dan penyusun kurikulum tingkat lanjut. Buatkan Modul Ajar (RPP) yang komprehensif untuk mata pelajaran {mapel}, Fase/Kelas {fase}, Tahun Pelajaran {tahun}, dengan topik "{materi}".
 
@@ -102,27 +96,63 @@ if st.button("✨ Buat Modul Ajar AI", use_container_width=True, type="primary")
                 
                 response = model.generate_content(prompt_system)
                 st.success("✅ Modul Ajar berhasil dibuat!")
-                
-                # SIMPAN HASIL KE SESSION STATE agar tidak hilang saat tombol download diklik
                 st.session_state['hasil_modul'] = response.text
                 
         except Exception as e:
             st.error(f"❌ Terjadi kesalahan: Periksa kembali API Key Anda atau coba beberapa saat lagi. Detail error: {e}")
 
-# --- MENAMPILKAN HASIL & TOMBOL DOWNLOAD ---
-# Bagian ini ditempatkan di luar blok if st.button agar tetap muncul setelah render ulang
+# --- MENAMPILKAN HASIL & TOMBOL DOWNLOAD WORD ---
 if 'hasil_modul' in st.session_state:
     with st.expander("📄 LIHAT HASIL MODUL AJAR", expanded=True):
+        # Tampilkan di layar aplikasi menggunakan format bawaan Streamlit
         st.markdown(st.session_state['hasil_modul'])
         
-        # Format nama file agar rapi (misal: Modul_Ajar_Kimia_Pereaksi_Pembatas.md)
-        nama_file = f"Modul_Ajar_{mapel}_{materi.replace(' ', '_')}.md"
+        # PROSES KONVERSI KE FORMAT WORD (.doc)
+        # 1. Ubah teks Markdown dari AI menjadi HTML
+        html_content = markdown.markdown(st.session_state['hasil_modul'], extensions=['tables'])
         
-        # Tombol Download Bawaan Streamlit
+        # 2. Bungkus HTML dengan kerangka yang bisa dibaca sempurna oleh MS Word
+        # Saya mengatur font bawaan menjadi Times New Roman ukuran 12pt agar resmi
+        word_html_template = f"""
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>Modul Ajar</title>
+            <style>
+                body {{
+                    font-family: 'Times New Roman', serif;
+                    font-size: 12pt;
+                    line-height: 1.5;
+                }}
+                h1, h2, h3, h4 {{
+                    font-family: 'Arial', sans-serif;
+                    color: #000000;
+                }}
+                table {{
+                    border-collapse: collapse;
+                    width: 100%;
+                }}
+                th, td {{
+                    border: 1px solid black;
+                    padding: 8px;
+                    text-align: left;
+                }}
+            </style>
+        </head>
+        <body>
+            {html_content}
+        </body>
+        </html>
+        """
+        
+        # Format nama file
+        nama_file = f"Modul_Ajar_{mapel}_{materi.replace(' ', '_')}.doc"
+        
+        # Tombol Download dengan tipe MIME Microsoft Word
         st.download_button(
-            label="📥 Download Modul Ajar",
-            data=st.session_state['hasil_modul'],
+            label="📥 Download Format MS Word (.doc)",
+            data=word_html_template,
             file_name=nama_file,
-            mime="text/markdown",
+            mime="application/msword",
             use_container_width=True
         )
