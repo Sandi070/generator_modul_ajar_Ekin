@@ -1,5 +1,6 @@
 import streamlit as st
 import google.generativeai as genai
+from datetime import datetime
 
 # Konfigurasi Halaman (Harus diletakkan paling atas)
 st.set_page_config(
@@ -8,6 +9,16 @@ st.set_page_config(
     layout="centered",
     initial_sidebar_state="expanded"
 )
+
+# --- FUNGSI MENGHITUNG TAHUN PELAJARAN OTOMATIS ---
+def get_tahun_pelajaran():
+    now = datetime.now()
+    # Jika bulan sebelum Juli (Jan-Jun), berarti masih tahun ajaran tahun lalu/sekarang
+    if now.month < 7:
+        return f"{now.year - 1}/{now.year}"
+    # Jika bulan Juli ke atas, berarti masuk tahun ajaran sekarang/tahun depan
+    else:
+        return f"{now.year}/{now.year + 1}"
 
 # --- DESAIN HEADER ---
 st.title("📚 AI Generator Modul Ajar")
@@ -33,16 +44,15 @@ with st.sidebar:
 # --- FORMULIR UTAMA ---
 st.markdown("### Lengkapi Data Pembelajaran")
 
-# Menggunakan kolom agar formulir terlihat sejajar dan profesional
 col1, col2 = st.columns(2)
 
 with col1:
-    # PERBAIKAN: Menggunakan 'value' sebagai nilai default agar tidak dianggap kosong
     mapel = st.text_input("Mata Pelajaran", value="Kimia")
     fase = st.text_input("Fase / Kelas", value="F / XI")
+    # Menu Tahun Pelajaran yang terisi otomatis berdasarkan tahun saat ini
+    tahun = st.text_input("Tahun Pelajaran", value=get_tahun_pelajaran())
 
 with col2:
-    # PERBAIKAN: Menggunakan 'value' sebagai nilai default
     materi = st.text_input("Materi / Topik Pembelajaran", value="Pereaksi Pembatas")
     pendekatan = st.selectbox("Pendekatan Tambahan", [
         "Pendidikan Karakter",
@@ -57,25 +67,24 @@ st.markdown("---")
 # --- TOMBOL GENERATE ---
 if st.button("✨ Buat Modul Ajar AI", use_container_width=True, type="primary"):
     
-    # PERBAIKAN: Menggunakan .strip() agar spasi kosong tidak lolos validasi
+    # Validasi input
     if not user_api_key.strip():
         st.warning("⚠️ Silakan masukkan API Key di menu samping (sidebar) terlebih dahulu.")
-    elif not mapel.strip() or not fase.strip() or not materi.strip():
-        st.warning("⚠️ Harap lengkapi Mata Pelajaran, Fase/Kelas, dan Materi!")
+    elif not mapel.strip() or not fase.strip() or not materi.strip() or not tahun.strip():
+        st.warning("⚠️ Harap lengkapi semua kolom: Mata Pelajaran, Fase, Materi, dan Tahun Pelajaran!")
     else:
-        # Jika semua data lengkap, mulai proses AI
         try:
             with st.spinner("⏳ Sedang merakit modul pembelajaran dengan cinta..."):
                 
-                # Konfigurasi API dengan key pengguna
+                # Konfigurasi API
                 genai.configure(api_key=user_api_key)
                 
-                # PERBAIKAN: Menggunakan nama model yang valid
+                # Menggunakan model Gemini sesuai preferensi Anda
                 model = genai.GenerativeModel('gemini-flash-latest')
                 
-                # Menyusun Prompt
+                # Menyusun Prompt (Menambahkan variabel {tahun} ke dalam instruksi)
                 prompt_system = f"""
-                Kamu adalah seorang ahli pendidikan dan penyusun kurikulum tingkat lanjut. Buatkan Modul Ajar (RPP) yang komprehensif untuk mata pelajaran {mapel}, Fase/Kelas {fase}, dengan topik "{materi}".
+                Kamu adalah seorang ahli pendidikan dan penyusun kurikulum tingkat lanjut. Buatkan Modul Ajar (RPP) yang komprehensif untuk mata pelajaran {mapel}, Fase/Kelas {fase}, Tahun Pelajaran {tahun}, dengan topik "{materi}".
 
                 WAJIB GUNAKAN FORMAT BERIKUT (Format tebal/Heading untuk judul):
                 A. Informasi Umum (Identitas, Kompetensi Awal, Dimensi Profil, Capaian Pembelajaran, Tujuan Pembelajaran, Model/Pendekatan)
@@ -91,16 +100,29 @@ if st.button("✨ Buat Modul Ajar AI", use_container_width=True, type="primary")
                 Buatkan secara lengkap, profesional, dan siap cetak. Gunakan pemformatan Markdown yang rapi.
                 """
                 
-                # Mengirim request ke AI
                 response = model.generate_content(prompt_system)
-                
-                # Menampilkan Hasil
                 st.success("✅ Modul Ajar berhasil dibuat!")
                 
-                # Menggunakan expander agar UI tidak terlalu panjang ke bawah
-                with st.expander("📄 LIHAT HASIL MODUL AJAR", expanded=True):
-                    st.markdown(response.text)
-                    
+                # SIMPAN HASIL KE SESSION STATE agar tidak hilang saat tombol download diklik
+                st.session_state['hasil_modul'] = response.text
+                
         except Exception as e:
-            # Menangkap error jika API Key salah atau ada masalah jaringan
             st.error(f"❌ Terjadi kesalahan: Periksa kembali API Key Anda atau coba beberapa saat lagi. Detail error: {e}")
+
+# --- MENAMPILKAN HASIL & TOMBOL DOWNLOAD ---
+# Bagian ini ditempatkan di luar blok if st.button agar tetap muncul setelah render ulang
+if 'hasil_modul' in st.session_state:
+    with st.expander("📄 LIHAT HASIL MODUL AJAR", expanded=True):
+        st.markdown(st.session_state['hasil_modul'])
+        
+        # Format nama file agar rapi (misal: Modul_Ajar_Kimia_Pereaksi_Pembatas.md)
+        nama_file = f"Modul_Ajar_{mapel}_{materi.replace(' ', '_')}.md"
+        
+        # Tombol Download Bawaan Streamlit
+        st.download_button(
+            label="📥 Download Modul Ajar",
+            data=st.session_state['hasil_modul'],
+            file_name=nama_file,
+            mime="text/markdown",
+            use_container_width=True
+        )
