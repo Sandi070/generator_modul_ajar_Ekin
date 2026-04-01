@@ -104,17 +104,95 @@ if st.button("✨ Buat Modul Ajar AI", use_container_width=True, type="primary")
 # --- MENAMPILKAN HASIL & TOMBOL DOWNLOAD WORD ---
 if 'hasil_modul' in st.session_state:
     with st.expander("📄 LIHAT HASIL MODUL AJAR", expanded=True):
-        # Tampilkan di layar aplikasi menggunakan format bawaan Streamlit
+        # Tampilkan di layar aplikasi
         st.markdown(st.session_state['hasil_modul'])
         
-        # PROSES KONVERSI KE FORMAT WORD (.doc)
-        # 1. Ubah teks Markdown dari AI menjadi HTML
-        html_content = markdown.markdown(st.session_state['hasil_modul'], extensions=['tables'])
+        # PROSES KONVERSI KE FORMAT WORD (.doc) YANG LEBIH RAPI
+        # Tambahan ekstensi 'sane_lists' dan 'nl2br' agar paragraf dan poin-poin terstruktur baik
+        html_content = markdown.markdown(
+            st.session_state['hasil_modul'], 
+            extensions=['tables', 'sane_lists', 'nl2br']
+        )
         
-        # 2. Bungkus HTML dengan kerangka yang bisa dibaca sempurna oleh MS Word
-        # Saya mengatur font bawaan menjadi Times New Roman ukuran 12pt agar resmi
+        # Kerangka HTML dengan injeksi CSS khusus Microsoft Word
         word_html_template = f"""
-        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <html xmlns:v="urn:schemas-microsoft-com:vml"
+              xmlns:o="urn:schemas-microsoft-com:office:office"
+              xmlns:w="urn:schemas-microsoft-com:office:word"
+              xmlns:m="http://schemas.microsoft.com/office/2004/12/omml"
+              xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+            <meta charset='utf-8'>
+            <title>Modul Ajar</title>
+            <style>
+                @page WordSection1 {{
+                    size: 21.0cm 29.7cm; /* Setelan Kertas A4 */
+                    margin: 2.54cm 2.54cm 2.54cm 2.54cm; /* Margin Normal (Atas, Bawah, Kiri, Kanan) */
+                    mso-header-margin: 35.4pt;
+                    mso-footer-margin: 35.4pt;
+                    mso-paper-source: 0;
+                }}
+                div.WordSection1 {{
+                    page: WordSection1;
+                }}
+                body {{
+                    font-family: 'Times New Roman', serif;
+                    font-size: 12pt;
+                    line-height: 1.5;
+                    color: black;
+                }}
+                h1, h2, h3, h4 {{
+                    font-family: 'Arial', sans-serif;
+                    color: black;
+                    margin-top: 18pt;
+                    margin-bottom: 6pt;
+                }}
+                p {{
+                    margin-top: 0;
+                    margin-bottom: 10pt;
+                    text-align: justify; /* Membuat teks Rata Kiri-Kanan */
+                }}
+                table {{
+                    border-collapse: collapse;
+                    width: 100%;
+                    margin-top: 10pt;
+                    margin-bottom: 12pt;
+                }}
+                th, td {{
+                    border: 1pt solid black;
+                    padding: 6pt 8pt;
+                    vertical-align: top;
+                    text-align: left;
+                }}
+                ul, ol {{
+                    margin-top: 0;
+                    margin-bottom: 10pt;
+                }}
+                li {{
+                    margin-bottom: 5pt;
+                    text-align: justify;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="WordSection1">
+                {html_content}
+            </div>
+        </body>
+        </html>
+        """
+        
+        # Format nama file
+        nama_file = f"Modul_Ajar_{mapel}_{materi.replace(' ', '_')}.doc"
+        
+        # Tombol Download dengan tipe MIME Microsoft Word
+        st.download_button(
+            label="📥 Download Format MS Word (.doc)",
+            data=word_html_template,
+            file_name=nama_file,
+            mime="application/msword",
+            use_container_width=True
+        )crosoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
         <head>
             <meta charset='utf-8'>
             <title>Modul Ajar</title>
