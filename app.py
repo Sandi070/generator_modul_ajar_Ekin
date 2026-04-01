@@ -68,8 +68,8 @@ if st.button("✨ Buat Modul Ajar AI", use_container_width=True, type="primary")
                 # Konfigurasi API dengan key pengguna
                 genai.configure(api_key=user_api_key)
                 
-                # Menggunakan model Gemini 1.5 Flash (Cepat dan cerdas)
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                # Menggunakan model Gemini Flash Latest (Cepat dan cerdas)
+                model = genai.GenerativeModel('gemini-flash-latest')
                 
                 # Menyusun Prompt
                 prompt_system = f"""
